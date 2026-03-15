@@ -1339,9 +1339,12 @@ static Tensor dense_to_sparse_compressed(
   }
 
   // Create compressed sparse matrix with the target layout.
+  Tensor compressed_indices_contig = compressed_indices.is_contiguous() ? compressed_indices : compressed_indices.contiguous();
+  Tensor plain_indices_contig = plain_indices.is_contiguous() ? plain_indices : plain_indices.contiguous();
+
   return at::_sparse_compressed_tensor_unsafe(
-      compressed_indices,
-      plain_indices,
+      compressed_indices_contig,
+      plain_indices_contig,
       values,
       self.sizes(),
       self.options().layout(target_layout));

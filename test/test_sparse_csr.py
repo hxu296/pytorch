@@ -11,8 +11,8 @@ from contextlib import redirect_stderr
 from torch.testing import make_tensor, FileCheck
 from torch.testing._internal.common_cuda import SM53OrLater, SM80OrLater, TEST_CUSPARSE_GENERIC
 from torch.testing._internal.common_utils import \
-    (TEST_WITH_TORCHINDUCTOR, TEST_WITH_ROCM, TEST_CUDA_CUDSS, TEST_SCIPY, TEST_NUMPY, TEST_MKL, IS_WINDOWS, TestCase,
-     run_tests, load_tests, coalescedonoff, parametrize, subtest, skipIfTorchDynamo,
+    (TEST_WITH_TORCHINDUCTOR, TEST_WITH_ROCM, TEST_CUDA_CUDSS, TEST_SCIPY, TEST_NUMPY, TEST_MKL, TEST_MPS, IS_WINDOWS,
+     TestCase, run_tests, load_tests, coalescedonoff, parametrize, subtest, skipIfTorchDynamo,
      skipIfRocmVersionLessThan, IS_FBCODE, IS_REMOTE_GPU, suppress_warnings)
 from torch.testing._internal.common_device_type import \
     (ops, instantiate_device_type_tests, dtypes, OpDTypes, dtypesIfCUDA, onlyCPU, onlyCUDA, skipCUDAIfNoSparseGeneric,
@@ -4284,6 +4284,35 @@ class TestSparseCompressedTritonKernels(TestCase):
         # ... or not:
         self.assertEqual(get_meta_with_checks(32, 32, 64, warn_count=1),
                          dict(GROUP_SIZE_ROW=4, SPLIT_N=4, num_stages=1, num_warps=4))
+
+
+@unittest.skipIf(not TEST_MPS, "MPS not available")
+class TestSparseCSRMPS(TestCase):
+
+    def test_sparse_csr_tensor_factory_mps(self):
+        device = torch.device("mps")
+        crow = torch.tensor([0, 2, 3], device=device, dtype=torch.int64)
+        col = torch.tensor([0, 1, 1], device=device, dtype=torch.int64)
+        values = torch.tensor([1.0, 2.0, 3.0], device=device, dtype=torch.float32)
+
+        csr = torch.sparse_csr_tensor(crow, col, values, (2, 2), device=device)
+
+        self.assertEqual(csr.layout, torch.sparse_csr)
+        self.assertTrue(csr.is_mps)
+        expected = torch.tensor([[1.0, 2.0], [0.0, 3.0]], device=device)
+        self.assertEqual(csr.to_dense(), expected)
+
+    def test_dense_to_sparse_csr_roundtrip_mps(self):
+        device = torch.device("mps")
+        dense = torch.tensor(
+            [[0.0, 4.0, 0.0], [5.0, 0.0, 6.0]], device=device, dtype=torch.float32
+        )
+
+        csr = dense.to_sparse_csr()
+
+        self.assertEqual(csr.layout, torch.sparse_csr)
+        self.assertTrue(csr.is_mps)
+        self.assertEqual(csr.to_dense(), dense)
 
 
 # e.g., TestSparseCSRCPU and TestSparseCSRCUDA

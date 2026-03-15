@@ -3083,6 +3083,7 @@
   dispatch:
     CPU: _validate_compressed_sparse_indices_cpu
     CUDA: _validate_compressed_sparse_indices_cuda
+    MPS: _validate_compressed_sparse_indices_mps
 
 - func: _cufft_get_plan_cache_size(DeviceIndex device_index) -> int
 
@@ -7415,6 +7416,8 @@
     CompositeImplicitAutograd: _sparse_compressed_tensor_unsafe_symint
 
 - func: _sparse_csr_tensor_unsafe(Tensor crow_indices, Tensor col_indices, Tensor values, int[] size, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
+  dispatch:
+    SparseCsrCPU, SparseCsrCUDA, SparseCsrMPS, SparseCsrMeta, SparseCsrXPU: _sparse_csr_tensor_unsafe
 - func: _sparse_csc_tensor_unsafe(Tensor ccol_indices, Tensor row_indices, Tensor values, int[] size, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
 - func: _sparse_bsr_tensor_unsafe(Tensor crow_indices, Tensor col_indices, Tensor values, int[] size, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
 - func: _sparse_bsc_tensor_unsafe(Tensor ccol_indices, Tensor row_indices, Tensor values, int[] size, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
@@ -7692,9 +7695,9 @@
 - func: _to_sparse_csr(Tensor self, int? dense_dim=None) -> Tensor
   variants: method
   dispatch:
-    CPU, CUDA: dense_to_sparse_csr
-    SparseCPU, SparseCUDA: coo_to_sparse_csr
-    SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: sparse_compressed_to_sparse_csr
+    CPU, CUDA, MPS: dense_to_sparse_csr
+    SparseCPU, SparseCUDA, SparseMPS: coo_to_sparse_csr
+    SparseCsrCPU, SparseCsrCUDA, SparseCsrMPS, SparseCsrMeta: sparse_compressed_to_sparse_csr
   autogen: _to_sparse_csr.out
 
 - func: to_sparse_csc(Tensor self, int? dense_dim=None) -> Tensor
@@ -11777,6 +11780,7 @@
   dispatch:
     CPU: _convert_indices_from_coo_to_csr_structured_cpu
     CUDA: _convert_indices_from_coo_to_csr_structured_cuda
+    MPS: _convert_indices_from_coo_to_csr_structured_mps
 
 - func: _convert_indices_from_csr_to_coo(Tensor crow_indices, Tensor col_indices, *, bool out_int32=False, bool transpose=False) -> Tensor
   structured_delegate: _convert_indices_from_csr_to_coo.out
@@ -11786,6 +11790,7 @@
   dispatch:
     CPU: _convert_indices_from_csr_to_coo_structured_cpu
     CUDA: _convert_indices_from_csr_to_coo_structured_cuda
+    MPS: _convert_indices_from_csr_to_coo_structured_mps
 
 ## NN wrappers
 
